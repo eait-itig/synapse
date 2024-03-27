@@ -198,6 +198,7 @@ class MSC3861:
             or root.saml2.saml2_enabled
             or root.cas.cas_enabled
             or root.jwt.jwt_enabled
+            or root.httpsso.httpsso_enabled
         ):
             raise ConfigError("SSO cannot be enabled when OAuth delegation is enabled")
 

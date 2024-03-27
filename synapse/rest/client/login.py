@@ -61,6 +61,7 @@ from synapse.http.site import RequestInfo, SynapseRequest
 from synapse.rest.client._base import client_patterns
 from synapse.rest.well_known import WellKnownBuilder
 from synapse.types import JsonDict, UserID
+from synapse.util import json_decoder
 
 if TYPE_CHECKING:
     from synapse.server import HomeServer
@@ -100,6 +101,7 @@ class LoginRestServlet(RestServlet):
         # SSO configuration.
         self.saml2_enabled = hs.config.saml2.saml2_enabled
         self.cas_enabled = hs.config.cas.cas_enabled
+        self.httpsso_enabled = hs.config.httpsso.httpsso_enabled
         self.oidc_enabled = hs.config.oidc.oidc_enabled
         self._refresh_tokens_enabled = (
             hs.config.registration.refreshable_access_token_lifetime is not None
@@ -155,7 +157,7 @@ class LoginRestServlet(RestServlet):
         # The login token flow requires m.login.token to be advertised.
         support_login_token_flow = self._get_login_token_enabled
 
-        if self.cas_enabled or self.saml2_enabled or self.oidc_enabled:
+        if self.cas_enabled or self.saml2_enabled or self.oidc_enabled or self.httpsso_enabled:
             flows.append(
                 {
                     "type": LoginRestServlet.SSO_TYPE,
@@ -703,6 +705,31 @@ class CasTicketServlet(RestServlet):
             request, ticket, client_redirect_url, session
         )
 
+class HttpSsoServlet(RestServlet):
+    PATTERNS = client_patterns("/login/httpsso", v1=True)
+
+    def __init__(self, hs: "HomeServer"):
+        super().__init__()
+        self._httpsso_hdrname = hs.config.httpsso.httpsso_json_header.encode('ascii')
+        self._httpsso_handler = hs.get_httpsso_handler()
+
+    async def on_GET(self, request: SynapseRequest) -> None:
+        header = request.getHeader(self._httpsso_hdrname)
+        if not header:
+            message = "Missing HTTP SSO authentication information header"
+            raise SynapseError(400, message, errcode=Codes.MISSING_PARAM)
+
+        payload = json_decoder.decode(header.decode("utf-8"))
+
+        client_redirect_url = parse_string(request, "redirectUrl")
+        session = parse_string(request, "session")
+        if not client_redirect_url and not session:
+            message = "Missing string query parameter redirectUrl or session"
+            raise SynapseError(400, message, errcode=Codes.MISSING_PARAM)
+
+        await self._httpsso_handler.handle_payload(
+            request, payload, client_redirect_url, session
+        )
 
 def register_servlets(hs: "HomeServer", http_server: HttpServer) -> None:
     if hs.config.experimental.msc3861.enabled:
@@ -718,10 +745,13 @@ def register_servlets(hs: "HomeServer", http_server: HttpServer) -> None:
         hs.config.cas.cas_enabled
         or hs.config.saml2.saml2_enabled
         or hs.config.oidc.oidc_enabled
+        or hs.config.httpsso.httpsso_enabled
     ):
         SsoRedirectServlet(hs).register(http_server)
     if hs.config.cas.cas_enabled:
         CasTicketServlet(hs).register(http_server)
+    if hs.config.httpsso.httpsso_enabled:
+        HttpSsoServlet(hs).register(http_server)
 
 
 def _load_sso_handlers(hs: "HomeServer") -> None:
@@ -738,3 +768,5 @@ def _load_sso_handlers(hs: "HomeServer") -> None:
         hs.get_saml_handler()
     if hs.config.oidc.oidc_enabled:
         hs.get_oidc_handler()
+    if hs.config.httpsso.httpsso_enabled:
+        hs.get_httpsso_handler()

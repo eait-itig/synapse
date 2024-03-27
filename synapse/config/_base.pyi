@@ -28,6 +28,7 @@ from synapse.config import (  # noqa: F401
     cache,
     captcha,
     cas,
+    httpsso,
     consent,
     database,
     emailconfig,
@@ -98,6 +99,7 @@ class RootConfig:
     key: key.KeyConfig
     saml2: saml2.SAML2Config
     cas: cas.CasConfig
+    httpsso: httpsso.HttpSsoConfig
     sso: sso.SSOConfig
     oidc: oidc.OIDCConfig
     jwt: jwt.JWTConfig

@@ -28,6 +28,7 @@ from .background_updates import BackgroundUpdateConfig
 from .cache import CacheConfig
 from .captcha import CaptchaConfig
 from .cas import CasConfig
+from .httpsso import HttpSsoConfig
 from .consent import ConsentConfig
 from .database import DatabaseConfig
 from .emailconfig import EmailConfig
@@ -87,6 +88,7 @@ class HomeServerConfig(RootConfig):
         SAML2Config,
         OIDCConfig,
         CasConfig,
+        HttpSsoConfig,
         SSOConfig,
         JWTConfig,
         AuthConfig,
