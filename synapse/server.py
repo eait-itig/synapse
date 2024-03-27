@@ -67,6 +67,7 @@ from synapse.handlers.admin import AdminHandler
 from synapse.handlers.appservice import ApplicationServicesHandler
 from synapse.handlers.auth import AuthHandler, PasswordAuthProvider
 from synapse.handlers.cas import CasHandler
+from synapse.handlers.httpsso import HttpSsoHandler
 from synapse.handlers.deactivate_account import DeactivateAccountHandler
 from synapse.handlers.delayed_events import DelayedEventsHandler
 from synapse.handlers.device import DeviceHandler, DeviceWorkerHandler
@@ -795,6 +796,10 @@ class HomeServer(metaclass=abc.ABCMeta):
     @cache_in_self
     def get_cas_handler(self) -> CasHandler:
         return CasHandler(self)
+
+    @cache_in_self
+    def get_httpsso_handler(self) -> HttpSsoHandler:
+        return HttpSsoHandler(self)
 
     @cache_in_self
     def get_saml_handler(self) -> "SamlHandler":
