@@ -550,7 +550,7 @@ class LoggingContext:
             duration_sec: The number of seconds the database transaction took.
         """
         if duration_sec < 0:
-            raise ValueError("DB txn time can only be non-negative")
+            duration_sec = 0
         self._resource_usage.db_txn_count += 1
         self._resource_usage.db_txn_duration_sec += duration_sec
         if self.parent_context:
@@ -563,7 +563,7 @@ class LoggingContext:
             sched_sec: number of seconds it took us to get a connection
         """
         if sched_sec < 0:
-            raise ValueError("DB scheduling time can only be non-negative")
+            sched_sec = 0
         self._resource_usage.db_sched_duration_sec += sched_sec
         if self.parent_context:
             self.parent_context.add_database_scheduled(sched_sec)
